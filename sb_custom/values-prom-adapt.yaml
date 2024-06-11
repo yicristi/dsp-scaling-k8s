@@ -1,0 +1,21 @@
+#logLevel: 6
+prometheus:
+  url: http://prometheus-operated
+  port: 9090
+  path: /
+rules:
+  default: true
+  external:
+    - metricsQuery: sum(avg_over_time(kafka_consumergroup_lag{ << .LabelMatchers >> }[20s])) by (topic,consumergroup)
+      name:
+        as: kafka_input_lag
+      resources:
+        template: <<.Resource>>
+      seriesQuery: 'kafka_consumergroup_lag{topic="input",consumergroup="shufflebench-kstreams"}'
+    - metricsQuery: 'avg(avg by (pod) (irate(container_cpu_usage_seconds_total{pod=~"shuffle-kstreams.*"}[30s])) * 100) without (pod)'
+      name:
+        as: consumer_cpu_utilization_30s
+      resources:
+        template: <<.Resource>>
+      seriesQuery: container_cpu_usage_seconds_total
+
